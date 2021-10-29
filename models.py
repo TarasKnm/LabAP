@@ -81,6 +81,3 @@ class goods(BaseModel):
     store_id = Column(Integer, ForeignKey(store.id))
     goodsStatus_id = Column(Integer, ForeignKey(goodsStatus.id))
     orders_id = Column(Integer, ForeignKey(orders.id))
-
-
-BaseModel.metadata.create_all(engine)
