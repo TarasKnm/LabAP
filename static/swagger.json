@@ -8,12 +8,6 @@
       "url": "https://opensource.org/licenses/MIT"
     }
   },
-  "tags": [
-    {
-      "name": "Products API",
-      "description": "Test API"
-    }
-  ],
    "servers": [
         {
         "url": "/"
