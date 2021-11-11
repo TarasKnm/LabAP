@@ -1,0 +1,846 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "description": "This is a sample goodsstore server.  You can find out more about Swagger at [http://swagger.io](http://swagger.io) or on\n    [irc.freenode.net, #swagger](http://swagger.io/irc/).",
+    "title": "Swagger GoodsStore",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "tags": [
+    {
+      "name": "Products API",
+      "description": "Test API"
+    }
+  ],
+   "servers": [
+        {
+        "url": "/"
+        }
+    ],
+       "components": {
+        "schemas": {
+        "Goods":{
+              "type": "object",
+              "properties" :{
+                "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "name": {
+                "type": "string"
+              },
+                "isAvailable": {
+                  "type": "boolean"
+                },
+                "photoUrls": {
+                  "type": "array",
+                  "xml": {
+                    "name": "photoUrl",
+                    "wrapped": true
+                  },
+                    "items": {
+                      "type": "string"
+                  }
+
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "available",
+                    "pending",
+                    "sold" ]
+
+                }
+              }
+            },
+          "User": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "username": {
+                "type": "string"
+              },
+              "firstName": {
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "userStatus": {
+                "type": "string"
+              }
+            }
+          },
+          "Order": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "goodsId": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "userId": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "shipDate": {
+                "type": "string",
+                "format": "data-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                    "placed",
+                    "approved",
+                    "delivered" ]
+              },
+              "complete": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          },
+          "Store": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "goods": {
+                "maxItems": 8,
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Goods"
+                }
+              }
+            }
+          }
+        }
+    },
+     "paths": {
+       "/user/logout": {
+         "get" :{
+                "tags": [
+                    "user"
+                ],
+                "summary": "Logout user into the system",
+
+                "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            },
+                  "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            }
+       },
+       "/user/login": {
+         "get" :{
+                "tags": [
+                    "user"
+                ],
+                "summary": "Logs user into the system",
+                "parameters": [{
+                  "name": "username",
+                  "in": "query",
+                  "description": "The user name for login",
+                  "required": true,
+                  "type": "string"
+                },{
+                "name": "password",
+                  "in": "query",
+                  "description": "The password for login in clear text",
+                  "required": true,
+                  "type": "string"}
+                ],
+
+                "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            },
+                  "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            }
+       },
+       "/user": {
+         "post": {
+            "tags": [
+                "user"
+            ],
+            "summary": "Add user",
+            "requestBody": {
+            "description": "Post New user To Database",
+            "required": true,
+            "content": {
+                "application/json": {
+                "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                }
+            }
+            },
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            },
+            "get" :{
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get All users",
+
+                "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            },
+                  "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            }
+       },
+       "/user/{username}":{
+          "get" :{
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get users",
+                "parameters": [{
+                  "name": "username",
+                  "in": "path",
+                  "description": "user username to update",
+                  "required": true,
+                  "type": "string"
+                }],
+
+                "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            },
+                  "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            },
+
+            "put": {
+            "tags": [
+                "user"
+            ],
+            "parameters": [{
+                "name": "username",
+                "in": "path",
+                "description": "user username to update",
+                "required": true,
+                "type": "string"
+            }],
+            "summary": "Update User",
+            "requestBody": {
+            "description": "Update Existing user On Database",
+            "required": true,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/User"
+                    }
+                }
+            }
+            },
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+        },
+        "delete": {
+            "tags": [
+                "user"
+            ],
+            "parameters": [{
+                "name": "username",
+                "in": "path",
+                "description": "user username to delete",
+                "required": true,
+                "type": "string"
+            }],
+            "summary": "Delete user",
+
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+        }
+        },
+       "/store/goods/{id}": {
+         "post": {
+            "tags": [
+                "store"
+            ],
+           "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "store id to set goods",
+                "required": true,
+                "type": "string",
+             "format": "int64"
+           }],
+            "summary": "Add a new goods to the store",
+            "requestBody": {
+            "description": "Post New goods To Database",
+            "required": true,
+            "content": {
+                "application/json": {
+                "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+                }
+            }
+            },
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            },
+         "get" :{
+                "tags": [
+                    "store"
+                ],
+                "summary": "Get All goods",
+                "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "store id to get goods",
+                "required": true,
+                "type": "string",
+             "format": "int64"
+           }],
+                "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+            },
+                  "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            }
+       },
+       "/store/store": {
+         "post": {
+            "tags": [
+                "store"
+            ],
+            "summary": "Add store",
+            "requestBody": {
+            "description": "Post New store To Database",
+            "required": true,
+            "content": {
+                "application/json": {
+                "schema": {
+                    "$ref": "#/components/schemas/Store"
+                    }
+                }
+            }
+            },
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Store"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Store"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            }
+       },
+       "/store/order": {
+         "post": {
+            "tags": [
+                "store"
+            ],
+            "summary": "Add order",
+            "requestBody": {
+            "description": "Post New order To Database",
+            "required": true,
+            "content": {
+                "application/json": {
+                "schema": {
+                    "$ref": "#/components/schemas/Order"
+                    }
+                }
+            }
+            },
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Order"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Order"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            }
+       },
+       "/store/order/{id}":{
+          "get" :{
+                "tags": [
+                    "store"
+                ],
+                "summary": "Get order by id",
+                "parameters": [{
+                  "name": "id",
+                  "in": "path",
+                  "description": "order id to get",
+                  "required": true,
+                  "type": "integer",
+                  "format": "int64"
+                }],
+
+                "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Order"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Order"
+                    }
+            },
+                  "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            },
+         "delete": {
+            "tags": [
+                "store"
+            ],
+            "parameters": [
+              {
+                "name": "id",
+                "in": "path",
+                "description": "order id to delete",
+                "required": true,
+                "type": "integer",
+              "format": "int64"
+            }],
+            "summary": "Delete order by id",
+
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Order"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Order"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+        }
+       },
+
+       "/goods/{name}": {
+         "put": {
+            "tags": [
+                "goods"
+            ],
+            "parameters": [{
+                "name": "name",
+                "in": "path",
+                "description": "goods name to update",
+                "required": true,
+                "type": "string"
+            }],
+            "summary": "Update Goods",
+            "requestBody": {
+            "description": "Update Existing goods On Database",
+            "required": true,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/Goods"
+                    }
+                }
+            }
+            },
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+        }
+       },
+       "/goods/findByStatus": {
+         "get": {
+           "tags": [
+             "goods"
+           ],
+           "summary": "Finds goods by status",
+           "parameters": [
+             {
+               "name": "status",
+               "in": "query",
+               "description": "Status values that need to be considered for filter",
+               "required": true,
+               "type": "string",
+               "style": "form",
+               "explode": true,
+               "schema": {
+                 "type": "array",
+                 "items": {
+                   "type": "string",
+                   "default": "available",
+                   "enum": ["available", "pending", "sold"]
+                 }
+               }
+             }
+           ],
+           "responses": {
+             "200": {
+               "description": "OK",
+               "schema": {
+                 "$ref": "#/components/schemas/Goods"
+               }
+             },
+             "404": {
+               "description": "NOT FOUND",
+               "schema": {
+                 "$ref": "#/components/schemas/Goods"
+               }
+             },
+             "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+           }
+         }
+       },
+       "/goods/{id}":{
+          "get" :{
+                "tags": [
+                    "goods"
+                ],
+                "summary": "Get goods by id",
+                "parameters": [{
+                  "name": "id",
+                  "in": "path",
+                  "description": "goods id to get",
+                  "required": true,
+                  "type": "integer",
+                  "format": "int64"
+                }],
+
+                "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+            },
+                  "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+            },
+         "put": {
+            "tags": [
+                "goods"
+            ],
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "goods id to update",
+                "required": true,
+                "type": "integer",
+              "format": "int64"
+            }],
+            "summary": "Update Goods by id",
+            "requestBody": {
+            "description": "Update Existing goods On Database by id",
+            "required": true,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/Goods"
+                    }
+                }
+            }
+            },
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+        },
+         "delete": {
+            "tags": [
+                "goods"
+            ],
+            "parameters": [
+              {
+                "name": "api_key",
+                "in": "header",
+                "required": false,
+                "type": "string"
+
+            },
+              {
+                "name": "id",
+                "in": "path",
+                "description": "goods id to delete",
+                "required": true,
+                "type": "integer",
+              "format": "int64"
+            }],
+            "summary": "Delete goods by id",
+
+            "responses": {
+                "200": {
+                    "description": "OK",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+                },
+                "404": {
+                    "description": "NOT FOUND",
+                    "schema": {
+                    "$ref": "#/components/schemas/Goods"
+                    }
+            },
+              "500": {
+                    "description": "SERVER ERROR",
+                    "schema": {
+                    "$ref": "#/components/schemas/User"
+                    }
+            }
+            }
+        }
+       }
+       }
+}
