@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import Column, Integer, ForeignKey, VARCHAR, DateTime, Boolean
 
-engine = create_engine('mysql+pymysql://root:qwerty@127.0.0.1/mydb')
+engine = create_engine('mysql+pymysql://root:00000000password@localhost:3306/swagger_service')
 engine.connect()
 
 SessionFactory = sessionmaker(bind=engine)
@@ -28,7 +28,7 @@ class user(BaseModel):
     firstname = Column(VARCHAR(45))
     lastname = Column(VARCHAR(45))
     email = Column(VARCHAR(45))
-    password = Column(VARCHAR(45))
+    password = Column(VARCHAR(300))
     phone = Column(VARCHAR(45))
     userStatus_id = Column(Integer, ForeignKey(userStatus.id))
 
@@ -44,16 +44,6 @@ class ordersStatus(BaseModel):
 
     id = Column(Integer, primary_key=True)
     name = Column(VARCHAR(45))
-
-
-class orders(BaseModel):
-    __tablename__ = "orders"
-
-    id = Column(Integer, primary_key=True)
-    shipDate = Column(DateTime)
-    complete = Column(Boolean)
-    ordersStatus_id = Column(Integer, ForeignKey(ordersStatus.id))
-    user_id = Column(Integer, ForeignKey(user.id))
 
 
 class store(BaseModel):
@@ -80,4 +70,13 @@ class goods(BaseModel):
     photoURL = Column(VARCHAR(45))
     store_id = Column(Integer, ForeignKey(store.id))
     goodsStatus_id = Column(Integer, ForeignKey(goodsStatus.id))
-    orders_id = Column(Integer, ForeignKey(orders.id))
+
+class orders(BaseModel):
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True)
+    shipDate = Column(DateTime)
+    complete = Column(Boolean)
+    ordersStatus_id = Column(Integer, ForeignKey(ordersStatus.id))
+    user_id = Column(Integer, ForeignKey(user.id))
+    goods_id = Column(Integer, ForeignKey(goods.id))
