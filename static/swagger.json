@@ -490,6 +490,12 @@
                     "$ref": "#/components/schemas/Store"
                     }
                 },
+              "403": {
+                    "description": "FAILED TO FETCH",
+                    "schema": {
+                    "$ref": "#/components/schemas/Store"
+                    }
+                },
                 "404": {
                     "description": "NOT FOUND",
                     "schema": {

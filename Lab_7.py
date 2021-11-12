@@ -102,7 +102,7 @@ def add_user():
     Session().add(user_)
     Session().commit()
     return jsonify({"username": username_, "firstName": firstname_, "lastName": lastname_,
-                        "email": email_, "password": pw_hash, "phone": phone_, "userStatus": status_})
+                        "email": email_, "password": str(pw_hash), "phone": phone_, "userStatus": status_})
     #except Exception as e:
         #return jsonify({"Error": "Invalid Request, please try again."})
 
