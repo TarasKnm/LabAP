@@ -31,7 +31,7 @@ target_metadata = BaseModel.metadata
 
 config.set_main_option(
     "sqlalchemy.url",
-    "mysql+pymysql://root:00000000password@localhost:3306/swagger_service"
+    "mysql+pymysql://root:0510@localhost:3306/swagger_service"
 )
 
 # other values from the config, defined by the needs of env.py,

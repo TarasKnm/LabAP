@@ -2,14 +2,17 @@ from flask import Flask, jsonify, request, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask_swagger_ui import get_swaggerui_blueprint
-from datetime import datetime
+from datetime import datetime, date, time, timedelta
 from models import Session, user, userStatus, ordersStatus, orders, store, goods, goodsStatus
 from flask import Flask
 from flask_bcrypt import Bcrypt, check_password_hash
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, JWTManager
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 
+app.config['SECRET_KEY'] = 'secret'
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 SWAGGER_URL = '/swagger'
@@ -78,12 +81,13 @@ def handle_500_error(_error):
     """Return a http 500 error to client"""
     return make_response(jsonify({'error': 'Server error'}), 500)
 
+
 # ______________________________________________USER______________________________________________
 
 
 @app.route("/user", methods=["POST"])
 def add_user():
-    #try:
+    # try:
     username_ = request.json['username']
     firstname_ = request.json['firstName']
     lastname_ = request.json['lastName']
@@ -97,14 +101,14 @@ def add_user():
     result_set = statuses_schema.dump(userstatus_)
 
     user_ = user(username=username_, firstname=firstname_, lastname=lastname_, email=email_,
-                     password=pw_hash, phone=phone_, userStatus_id=result_set[0]['id'])
+                 password=pw_hash, phone=phone_, userStatus_id=result_set[0]['id'])
 
     Session().add(user_)
     Session().commit()
     return jsonify({"username": username_, "firstName": firstname_, "lastName": lastname_,
-                        "email": email_, "password": str(pw_hash), "phone": phone_, "userStatus": status_})
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid Request, please try again."})
+                    "email": email_, "password": str(pw_hash), "phone": phone_, "userStatus": status_})
+    # except Exception as e:
+    # return jsonify({"Error": "Invalid Request, please try again."})
 
 
 @app.route("/user", methods=["GET"])
@@ -119,63 +123,77 @@ def get_users():
     return jsonify(result_set)
 
 
-@app.route("/user/login", methods=["GET"])   # imitate login user, does not working
+@app.route("/user/login", methods=["GET"])  # imitate login user, does not working
 def login_user():
-    #try:
-    username_ = request.args.get('username')
-    password_ = request.args.get('password')
+    username = request.args.get('username')
+    password = request.args.get('password')
 
-    users_ = Session().query(user).filter(user.username.like('%' + username_ + '%')).limit(1)
-    result_set = users_schema.dump(users_)
+    if not username or not password:
+        return jsonify("Couldn't verify", 401)
 
-    if not check_password_hash(result_set[0]['password'], password_):
-        print(result_set['password'])
-        return jsonify({'Error': 'Wrong password'})
+    user_obj = Session().query(user).filter_by(username=username).first()
 
-    status_ = Session().query(userStatus).filter(userStatus.id == result_set[0]['userStatus_id'])
-    users_status_ = statuses_schema.dump(status_)
-
-    result_set[0].pop('userStatus_id', None)
-    result_set[0]['userStatus'] = users_status_[0]['name']
-    return jsonify(result_set)
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid request, please try again."})
+    if bcrypt.check_password_hash(user_obj.password.encode("utf-8"), password.encode("utf-8")):
+        access_token = create_access_token(identity=username, expires_delta=timedelta(days=7))
+        return jsonify({'token': access_token})
+    else:
+        return jsonify("Couldn't verify", 401)
 
 
-@app.route("/user/logout", methods=["GET"])   # imitate logout user, does not working
+@app.route("/user/logout", methods=["GET"])  # imitate logout user, does not working
 def logout_user():
     return jsonify({"Success": "Logout user"})
 
 
 @app.route("/user/<string:username>", methods=["DELETE"])
+@jwt_required()
 def delete_user(username):
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=username).first()
 
-    #try:
+    if current_user_username != user_obj.username:
+        return jsonify("Access denied", 402)
+
     Session().query(user).filter(user.username == username).delete()
     Session().commit()
 
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid request, please try again."})
+    # except Exception as e:
+    # return jsonify({"Error": "Invalid request, please try again."})
     return jsonify({"Success": "User deleted."})
 
 
 @app.route("/user/<string:username>", methods=["GET"])
+@jwt_required()
 def get_user(username):
-    user_ = Session().query(user).filter(user.username.like('%' + username + '%')).limit(1)
-    result_set = users_schema.dump(user_)
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=username).first()
 
-    status_ = Session().query(userStatus).filter(userStatus.id == result_set[0]['userStatus_id'])
-    users_status_ = statuses_schema.dump(status_)
+    if current_user_username != user_obj.username:
+        return jsonify("Access denied", 402)
 
-    result_set[0].pop('userStatus_id', None)
-    result_set[0]['userStatus'] = users_status_[0]['name']
-    return jsonify(result_set)
+    return jsonify(UserSchema().dump(user_obj))
 
+
+# user_ = Session().query(user).filter(user.username.like('%' + username + '%')).limit(1)
+#     result_set = users_schema.dump(user_)
+#
+#     status_ = Session().query(userStatus).filter(userStatus.id == result_set[0]['userStatus_id'])
+#     users_status_ = statuses_schema.dump(status_)
+#
+#     result_set[0].pop('userStatus_id', None)
+#     result_set[0]['userStatus'] = users_status_[0]['name']
+#     return jsonify(result_set)
 
 @app.route("/user/<string:username>", methods=["PUT"])
+@jwt_required()
 def update_user(username):
+    # try:
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=username).first()
 
-    #try:
+    if current_user_username != user_obj.username:
+        return jsonify("Access denied", 402)
+
     username_ = request.json['username']
     firstname_ = request.json['firstName']
     lastname_ = request.json['lastName']
@@ -188,21 +206,23 @@ def update_user(username):
     users_status_ = statuses_schema.dump(status_)
 
     Session().query(user).filter(user.username == username). \
-            update({"username": username_, "firstname": firstname_, "lastname": lastname_,
-                    "email":email_, "password": password_, "phone": phone_, "userStatus_id": users_status_[0]['id']}, synchronize_session="fetch")
+        update({"username": username_, "firstname": firstname_, "lastname": lastname_,
+                "email": email_, "password": password_, "phone": phone_, "userStatus_id": users_status_[0]['id']},
+               synchronize_session="fetch")
     Session().commit()
 
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid request, please try again."})
+    # except Exception as e:
+    # return jsonify({"Error": "Invalid request, please try again."})
     return jsonify({"username": username_, "firstname": firstname_, "lastname": lastname_,
-                    "email":email_, "password": password_, "phone": phone_, "userStatus": userstatus_})
+                    "email": email_, "password": password_, "phone": phone_, "userStatus": userstatus_})
+
 
 # ______________________________________________STORE______________________________________________
 
 
 @app.route("/store/order", methods=["POST"])
 def add_order():
-    #try:
+    # try:
     goodsId_ = request.json['goodsId']
     status_ = request.json['status']
     complete_ = request.json['complete']
@@ -212,19 +232,20 @@ def add_order():
     orderStatus_ = Session().query(ordersStatus).filter(ordersStatus.name.like('%' + status_ + '%')).limit(1)
     result_set = statuses_schema.dump(orderStatus_)
 
-    order_ = orders(shipDate=shipDate_, complete=complete_, ordersStatus_id=result_set[0]['id'], user_id=userId_, goods_id=goodsId_)
+    order_ = orders(shipDate=shipDate_, complete=complete_, ordersStatus_id=result_set[0]['id'], user_id=userId_,
+                    goods_id=goodsId_)
 
     Session().add(order_)
     Session().commit()
     return jsonify({"goodsId": goodsId_, "shipDate": shipDate_, "status": status_,
-                        "complete": complete_, "userId":userId_})
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid Request, please try again."})
+                    "complete": complete_, "userId": userId_})
+    # except Exception as e:
+    # return jsonify({"Error": "Invalid Request, please try again."})
 
 
 @app.route("/store/store", methods=["POST"])
 def add_store():
-    #try:
+    # try:
     name_ = request.json['name']
     category_ = request.json['category']
     goods_ = request.json['goods']
@@ -242,14 +263,15 @@ def add_store():
         goodsstatus_ = Session().query(goodsStatus).filter(goodsStatus.name.like('%' + item['status'] + '%')).limit(1)
         result_set = statuses_schema.dump(goodsstatus_)
 
-        new_obj = goods(name=item['name'], isAvailable=item['isAvailable'], photoURL=photoUrls_string, store_id=store_.id, goodsStatus_id=result_set[0]['id'])
+        new_obj = goods(name=item['name'], isAvailable=item['isAvailable'], photoURL=photoUrls_string,
+                        store_id=store_.id, goodsStatus_id=result_set[0]['id'])
         Session().add(new_obj)
 
     Session().commit()
 
     return jsonify({"name": name_, "category": category_, "goods": goods_})
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid Request, please try again."})
+    # except Exception as e:
+    # return jsonify({"Error": "Invalid Request, please try again."})
 
 
 @app.route("/store/order/<int:id>", methods=["GET"])
@@ -268,24 +290,25 @@ def delete_order_by_id(id):
 
 @app.route("/store/goods/<int:id>", methods=["POST"])
 def add_goods(id):
-    #try:
+    # try:
 
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
     photoUrls_ = request.json['photoUrls']
     photoUrls_string = ' '.join([str(item) for item in photoUrls_])
     status_ = request.json['status']
-
     goodsstatus_ = Session().query(goodsStatus).filter(goodsStatus.name.like('%' + status_ + '%')).limit(1)
     result_set = statuses_schema.dump(goodsstatus_)
-    new_obj = goods(name=name_, isAvailable=isAvailable_, photoURL=photoUrls_string, store_id=id, goodsStatus_id=result_set[0]['id'])
-
+    new_obj = goods(name=name_, isAvailable=isAvailable_, photoURL=photoUrls_string, store_id=id,
+                    goodsStatus_id=result_set[0]['id'])
     Session().add(new_obj)
     Session().commit()
     return jsonify({"name": name_, "isAvailable": isAvailable_, "photoUrls": photoUrls_,
-                        "status": status_})
-   # except Exception as e:
-        #return jsonify({"Error": "Invalid Request, please try again."})
+                    "status": status_})
+
+
+# except Exception as e:
+# return jsonify({"Error": "Invalid Request, please try again."})
 
 
 @app.route("/store/goods/<int:id>", methods=["GET"])
@@ -293,6 +316,7 @@ def get_goods(id):
     goods_ = Session().query(goods).filter(goods.store_id == id)
     result_set = goods_schema.dump(goods_)
     return jsonify(result_set)
+
 
 # ______________________________________________GOODS______________________________________________
 
@@ -306,20 +330,18 @@ def get_goods_by_id(id):
 
 @app.route("/goods/<int:id>", methods=["DELETE"])
 def delete_goods_by_id(id):
-
-    #try:
+    # try:
     Session().query(goods).filter(goods.id == id).delete()
     Session().commit()
 
     return jsonify({"Success": "Goods deleted."})
-    #except:
-        #return jsonify({"Error": "Invalid request, please try again."})
+    # except:
+    # return jsonify({"Error": "Invalid request, please try again."})
 
 
 @app.route("/goods/<string:name>", methods=["PUT"])
 def update_goods(name):
-
-    #try:
+    # try:
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
     photoUrls_ = request.json['photoUrls']
@@ -330,20 +352,19 @@ def update_goods(name):
     result_set = statuses_schema.dump(goodsstatus_)
 
     Session().query(goods).filter(goods.name.like('%' + name + '%')). \
-            update({"name": name_, "isAvailable": isAvailable_, "photoURL": photoUrls_string,
-                     "goodsStatus_id": result_set[0]['id']},
-                   synchronize_session="fetch")
+        update({"name": name_, "isAvailable": isAvailable_, "photoURL": photoUrls_string,
+                "goodsStatus_id": result_set[0]['id']},
+               synchronize_session="fetch")
     Session().commit()
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid request, please try again."})
+    # except Exception as e:
+    # return jsonify({"Error": "Invalid request, please try again."})
     return jsonify(({"name": name_, "isAvailable": isAvailable_, "photoUrls": photoUrls_,
-                        "status": status_}))
+                     "status": status_}))
 
 
 @app.route("/goods/<int:id>", methods=["PUT"])
 def update_goods_by_id(id):
-
-    #try:
+    # try:
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
     photoUrls_ = request.json['photoUrls']
@@ -354,26 +375,27 @@ def update_goods_by_id(id):
     result_set = statuses_schema.dump(goodsstatus_)
 
     Session().query(goods).filter(goods.id == id). \
-            update({"name": name_, "isAvailable": isAvailable_, "photoURL": photoUrls_string,
-                     "goodsStatus_id": result_set[0]['id']},
-                   synchronize_session="fetch")
+        update({"name": name_, "isAvailable": isAvailable_, "photoURL": photoUrls_string,
+                "goodsStatus_id": result_set[0]['id']},
+               synchronize_session="fetch")
     Session().commit()
-    #except Exception as e:
-        #return jsonify({"Error": "Invalid request, please try again."})
+    # except Exception as e:
+    # return jsonify({"Error": "Invalid request, please try again."})
     return jsonify(({"name": name_, "isAvailable": isAvailable_, "photoUrls": photoUrls_,
-                        "status": status_}))
+                     "status": status_}))
 
 
-@app.route("/goods/findByStatus", methods=["GET"])   # imitate login user, does not working
+@app.route("/goods/findByStatus", methods=["GET"])  # imitate login user, does not working
 def get_goods_by_status():
     status_ = request.args.get('status')
     goodsstatus_ = Session().query(goodsStatus).filter(goodsStatus.name.like('%' + status_ + '%')).limit(1)
     result_set = statuses_schema.dump(goodsstatus_)
-    goods_ = Session().query(goods.id, goods.name, goods.isAvailable, goods.photoURL).filter(goods.goodsStatus_id == result_set[0]['id'])
+    goods_ = Session().query(goods.id, goods.name, goods.isAvailable, goods.photoURL).filter(
+        goods.goodsStatus_id == result_set[0]['id'])
 
     goods_set = goods_schema.dump(goods_)
     return jsonify(goods_set)
 
 
 if __name__ == "__main__":
-    app.run(debug = True)
+    app.run(debug=True)

@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import Column, Integer, ForeignKey, VARCHAR, DateTime, Boolean
 
-engine = create_engine('mysql+pymysql://root:00000000password@localhost:3306/swagger_service')
+engine = create_engine('mysql+pymysql://root:0510@localhost:3306/swagger_service')
 engine.connect()
 
 SessionFactory = sessionmaker(bind=engine)
@@ -24,10 +24,10 @@ class user(BaseModel):
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
-    username = Column(VARCHAR(45))
+    username = Column(VARCHAR(45), unique=True)
     firstname = Column(VARCHAR(45))
     lastname = Column(VARCHAR(45))
-    email = Column(VARCHAR(45))
+    email = Column(VARCHAR(45), unique=True)
     password = Column(VARCHAR(300))
     phone = Column(VARCHAR(45))
     userStatus_id = Column(Integer, ForeignKey(userStatus.id))
@@ -70,6 +70,7 @@ class goods(BaseModel):
     photoURL = Column(VARCHAR(45))
     store_id = Column(Integer, ForeignKey(store.id))
     goodsStatus_id = Column(Integer, ForeignKey(goodsStatus.id))
+
 
 class orders(BaseModel):
     __tablename__ = "orders"
