@@ -78,6 +78,6 @@ class orders(BaseModel):
     id = Column(Integer, primary_key=True)
     shipDate = Column(DateTime)
     complete = Column(Boolean)
-    ordersStatus_id = Column(Integer, ForeignKey(ordersStatus.id))
+    ordersStatus_id = Column(Integer, ForeignKey(ordersStatus.id, ondelete='CASCADE'))
     user_id = Column(Integer, ForeignKey(user.id))
     goods_id = Column(Integer, ForeignKey(goods.id))

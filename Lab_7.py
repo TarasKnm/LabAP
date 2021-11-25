@@ -174,16 +174,6 @@ def get_user(username):
     return jsonify(UserSchema().dump(user_obj))
 
 
-# user_ = Session().query(user).filter(user.username.like('%' + username + '%')).limit(1)
-#     result_set = users_schema.dump(user_)
-#
-#     status_ = Session().query(userStatus).filter(userStatus.id == result_set[0]['userStatus_id'])
-#     users_status_ = statuses_schema.dump(status_)
-#
-#     result_set[0].pop('userStatus_id', None)
-#     result_set[0]['userStatus'] = users_status_[0]['name']
-#     return jsonify(result_set)
-
 @app.route("/user/<string:username>", methods=["PUT"])
 @jwt_required()
 def update_user(username):
@@ -244,8 +234,15 @@ def add_order():
 
 
 @app.route("/store/store", methods=["POST"])
+@jwt_required()
 def add_store():
     # try:
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=current_user_username).first()
+
+    if user_obj.userStatus_id != 2:
+        return jsonify("Access denied", 402)
+
     name_ = request.json['name']
     category_ = request.json['category']
     goods_ = request.json['goods']
@@ -275,22 +272,43 @@ def add_store():
 
 
 @app.route("/store/order/<int:id>", methods=["GET"])
+@jwt_required()
 def get_order_by_id(id):
-    orders_ = Session().query(orders).filter(orders.id == id)
-    result_set = orders_schema.dump(orders_)
-    return jsonify(result_set)
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=current_user_username).first()
+
+    order_obj = Session().query(orders).filter_by(id=id).first()
+
+    if order_obj.user_id == user_obj.id or user_obj.userStatus_id == 2:
+        return jsonify(OrdersSchema().dump(order_obj))
+    else:
+        return jsonify("Access denied", 402)
 
 
 @app.route("/store/order/<int:id>", methods=["DELETE"])
+@jwt_required()
 def delete_order_by_id(id):
-    Session().query(orders).filter(orders.id == id).delete()
-    Session().commit()
-    return jsonify({"Success": "Order deleted"})
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=current_user_username).first()
+    order_obj = Session().query(orders).filter_by(id=id).first()
+
+    if order_obj.user_id == user_obj.id or user_obj.userStatus_id == 2:
+        Session.delete(order_obj)
+        Session().commit()
+        return jsonify({"Success": "Order deleted"})
+    else:
+        return jsonify("Access denied", 402)
 
 
 @app.route("/store/goods/<int:id>", methods=["POST"])
+@jwt_required()
 def add_goods(id):
     # try:
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=current_user_username).first()
+
+    if user_obj.userStatus_id != 2:
+        return jsonify("Access denied", 402)
 
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
@@ -329,9 +347,16 @@ def get_goods_by_id(id):
 
 
 @app.route("/goods/<int:id>", methods=["DELETE"])
+@jwt_required()
 def delete_goods_by_id(id):
-    # try:
-    Session().query(goods).filter(goods.id == id).delete()
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=current_user_username).first()
+
+    if user_obj.userStatus_id != 2:
+        return jsonify("Access denied", 402)
+
+    good = Session().query(goods).filter_by(id=id).first()
+    Session().delete(good)
     Session().commit()
 
     return jsonify({"Success": "Goods deleted."})
@@ -340,16 +365,27 @@ def delete_goods_by_id(id):
 
 
 @app.route("/goods/<string:name>", methods=["PUT"])
+@jwt_required()
 def update_goods(name):
     # try:
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=current_user_username).first()
+
+    if user_obj.userStatus_id != 2:
+        return jsonify("Access denied", 402)
+
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
     photoUrls_ = request.json['photoUrls']
     photoUrls_string = ' '.join([str(item) for item in photoUrls_])
     status_ = request.json['status']
+    # goodStatus = Session().query(goodsStatus).filter_by(name=status_).first()
+    goodStatus = Session().query(goodsStatus).filter(goodsStatus.name.like('%' + status_ + '%')).limit(1)
+    result_set = statuses_schema.dump(goodStatus)
 
-    goodsstatus_ = Session().query(goodsStatus).filter(goodsStatus.name.like('%' + status_ + '%')).limit(1)
-    result_set = statuses_schema.dump(goodsstatus_)
+    temp_good = Session().query(goods).filter_by(name=name).first()
+    if temp_good is None:
+        return jsonify("Wrong name", 402)
 
     Session().query(goods).filter(goods.name.like('%' + name + '%')). \
         update({"name": name_, "isAvailable": isAvailable_, "photoURL": photoUrls_string,
@@ -363,13 +399,24 @@ def update_goods(name):
 
 
 @app.route("/goods/<int:id>", methods=["PUT"])
+@jwt_required()
 def update_goods_by_id(id):
     # try:
+    current_user_username = get_jwt_identity()
+    user_obj = Session().query(user).filter_by(username=current_user_username).first()
+
+    if user_obj.userStatus_id != 2:
+        return jsonify("Access denied", 402)
+
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
     photoUrls_ = request.json['photoUrls']
     photoUrls_string = ' '.join([str(item) for item in photoUrls_])
     status_ = request.json['status']
+
+    temp_good = Session().query(goods).filter_by(id=id).first()
+    if temp_good is None:
+        return jsonify("Wrong id", 402)
 
     goodsstatus_ = Session().query(goodsStatus).filter(goodsStatus.name.like('%' + status_ + '%')).limit(1)
     result_set = statuses_schema.dump(goodsstatus_)
