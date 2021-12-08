@@ -129,15 +129,17 @@ def login_user():
     password = request.args.get('password')
 
     if not username or not password:
-        return jsonify("Couldn't verify", 401)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     user_obj = Session().query(user).filter_by(username=username).first()
 
+    if not user_obj:
+        return jsonify({'error': 'Unauthorised'}), 401
     if bcrypt.check_password_hash(user_obj.password.encode("utf-8"), password.encode("utf-8")):
         access_token = create_access_token(identity=username, expires_delta=timedelta(days=7))
         return jsonify({'token': access_token})
     else:
-        return jsonify("Couldn't verify", 401)
+        return jsonify({'error': 'Unauthorised'}), 401
 
 
 @app.route("/user/logout", methods=["GET"])  # imitate logout user, does not working
@@ -152,7 +154,7 @@ def delete_user(username):
     user_obj = Session().query(user).filter_by(username=username).first()
 
     if current_user_username != user_obj.username:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     Session().query(user).filter(user.username == username).delete()
     Session().commit()
@@ -169,7 +171,7 @@ def get_user(username):
     user_obj = Session().query(user).filter_by(username=username).first()
 
     if current_user_username != user_obj.username:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     return jsonify(UserSchema().dump(user_obj))
 
@@ -182,7 +184,7 @@ def update_user(username):
     user_obj = Session().query(user).filter_by(username=username).first()
 
     if current_user_username != user_obj.username:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     username_ = request.json['username']
     firstname_ = request.json['firstName']
@@ -241,7 +243,7 @@ def add_store():
     user_obj = Session().query(user).filter_by(username=current_user_username).first()
 
     if user_obj.userStatus_id != 2:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     name_ = request.json['name']
     category_ = request.json['category']
@@ -282,7 +284,7 @@ def get_order_by_id(id):
     if order_obj.user_id == user_obj.id or user_obj.userStatus_id == 2:
         return jsonify(OrdersSchema().dump(order_obj))
     else:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
 
 @app.route("/store/order/<int:id>", methods=["DELETE"])
@@ -297,7 +299,7 @@ def delete_order_by_id(id):
         Session().commit()
         return jsonify({"Success": "Order deleted"})
     else:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
 
 @app.route("/store/goods/<int:id>", methods=["POST"])
@@ -308,7 +310,7 @@ def add_goods(id):
     user_obj = Session().query(user).filter_by(username=current_user_username).first()
 
     if user_obj.userStatus_id != 2:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
@@ -353,7 +355,7 @@ def delete_goods_by_id(id):
     user_obj = Session().query(user).filter_by(username=current_user_username).first()
 
     if user_obj.userStatus_id != 2:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     good = Session().query(goods).filter_by(id=id).first()
     Session().delete(good)
@@ -372,7 +374,7 @@ def update_goods(name):
     user_obj = Session().query(user).filter_by(username=current_user_username).first()
 
     if user_obj.userStatus_id != 2:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
@@ -385,7 +387,7 @@ def update_goods(name):
 
     temp_good = Session().query(goods).filter_by(name=name).first()
     if temp_good is None:
-        return jsonify("Wrong name", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     Session().query(goods).filter(goods.name.like('%' + name + '%')). \
         update({"name": name_, "isAvailable": isAvailable_, "photoURL": photoUrls_string,
@@ -406,7 +408,7 @@ def update_goods_by_id(id):
     user_obj = Session().query(user).filter_by(username=current_user_username).first()
 
     if user_obj.userStatus_id != 2:
-        return jsonify("Access denied", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     name_ = request.json['name']
     isAvailable_ = request.json['isAvailable']
@@ -416,7 +418,7 @@ def update_goods_by_id(id):
 
     temp_good = Session().query(goods).filter_by(id=id).first()
     if temp_good is None:
-        return jsonify("Wrong id", 402)
+        return jsonify({'error': 'Unauthorised'}), 401
 
     goodsstatus_ = Session().query(goodsStatus).filter(goodsStatus.name.like('%' + status_ + '%')).limit(1)
     result_set = statuses_schema.dump(goodsstatus_)
